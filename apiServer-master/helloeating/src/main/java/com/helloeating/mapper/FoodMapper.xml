@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+ 
+<mapper namespace="com.helloeating.mapper.FoodMapper">
+
+	<select id="SelectReview" resultType="java.util.LinkedHashMap">
+		SELECT	*
+		FROM	REVIEW 
+		WHERE 	STORE_ID = #{store_id}
+		LIMIT 5
+	</select>
+	
+	<select id="totalReviewPage" resultType="int">
+		SELECT COUNT(*)
+		FROM REVIEW
+		WHERE STORE_ID = #{store_id}
+	</select>
+	
+	<select id="StoreMoreInfo" resultType="java.util.HashMap">
+		SELECT   L.location_name
+				,L.location_id
+				,store_name
+				,store_id
+				,store_ver
+				,(SELECT COUNT(*) FROM LIKE_HIS WHERE target_id = S.store_id AND target_type='S' AND cancel_yn = 'N') AS store_point
+				,(SELECT CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END FROM LIKE_HIS WHERE target_id = S.store_id AND target_type='S' AND cancel_yn = 'N' AND member_no = #{member_no}) AS like_yn
+				,(SELECT img_url FROM IMAGE_INFO WHERE img_group_id = S.img_group_id limit 1) AS img_url
+		FROM	STORE S
+		JOIN	LOCATION L
+		ON		S.location_id = S.location_id
+		WHERE	S.store_id = #{store_id}
+	</select>
+	
+	<select id="SelectReviewImages" resultType="java.lang.String">
+	SELECT I.img_url
+	FROM LOCATION L JOIN STORE S
+			ON L.location_id = S.location_id
+		JOIN IMAGE_INFO I
+			ON S.img_group_id = I.img_group_id
+	WHERE S.store_id = #{store_id}
+		limit 10
+	</select>
+	
+	<!-- 마이픽 관련 -->
+	<select id="totalMyPick" resultType="int">
+		SELECT COUNT(*) 
+		FROM STORE_PICK P JOIN STORE S 
+		ON P.STORE_ID = S.STORE_ID
+		JOIN LOCATION L
+		ON S.LOCATION_ID = L.LOCATION_ID		
+		where P.MEMBER_NO = #{member_no}
+	</select>
+	
+	<select id="selectMyPick" resultType="java.util.HashMap">
+		SELECT  S.store_id,
+				S.store_name,
+				S.store_ver,
+				S.store_point,
+				L.location_id,
+				L.location_name,
+				P.reg_dt,
+				P.pick_id,
+				(SELECT COUNT(*) FROM LIKE_HIS WHERE target_id = S.store_id AND target_type='S' AND cancel_yn = 'N') AS store_point,
+				(SELECT img_url FROM IMAGE_INFO WHERE img_group_id = S.img_group_id limit 1) AS title_img
+		FROM STORE_PICK P JOIN STORE S 
+				ON P.STORE_ID = S.STORE_ID
+			JOIN LOCATION L
+				ON S.LOCATION_ID = L.LOCATION_ID
+			where P.MEMBER_NO = #{member_no}
+		<if test="page_num != null">
+		LIMIT #{page_num} , 5
+		</if>
+	</select>
+	
+	<select id="totalMyLike" resultType="int">
+		SELECT COUNT(*) 
+		FROM LIKE_HIS
+		where MEMBER_NO = #{member_no}
+		  AND target_type = #{pick_type} 
+		  AND cancel_yn = 'N'
+	</select>
+	
+		<!-- Olympic & Store -->
+	<select id="selectMyLike" resultType="java.util.HashMap">
+		SELECT S.store_id,
+				S.store_name,
+				S.store_ver,
+				S.store_point,
+				L.location_id,
+				L.location_name,
+				LH.reg_dt,
+				(SELECT COUNT(*) FROM LIKE_HIS WHERE target_id = S.store_id AND target_type='S' AND cancel_yn = 'N') AS store_point,
+				(SELECT img_url FROM IMAGE_INFO WHERE img_group_id = S.img_group_id limit 1) AS title_img
+		FROM STORE S
+		JOIN LIKE_HIS LH
+		ON S.store_id = LH.target_id 
+		JOIN LOCATION L
+		ON S.LOCATION_ID = L.LOCATION_ID
+		where LH.target_type= #{pick_type} 
+			AND LH.member_no= #{member_no}
+		    AND LH.cancel_yn='N'
+		<if test="page_num != null">
+		LIMIT #{page_num} , 5
+		</if>
+	</select>
+	
+	
+	
+	<insert id="insertMyPick">
+		INSERT INTO STORE_PICK
+			(pick_id, 
+			 store_id, 
+			 reg_dt, 
+			 member_no, 
+			 pick_type)
+			VALUES
+			((SELECT GET_HE_SEQ('STORE_PICK')),
+			 #{store_id},
+			 now(),
+			 #{member_no},
+			 #{pick_type})
+	</insert>
+	
+		<!-- 마이픽 중복 체크 -->
+	<select id="checkDuplicateMyPick" resultType="int">
+		SELECT COUNT(*) FROM STORE_PICK
+			WHERE store_id = #{store_id} AND
+				  member_no = #{member_no}		
+	</select>
+	
+	<delete id="deleteMyPick">
+		DELETE FROM STORE_PICK WHERE store_id=#{store_id} AND member_no=#{member_no}
+	</delete>
+	
+	<!-- 마이 올림픽 리스트 -->
+	<select id="totalMyOlympicList" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM STORE_OLYMPIC A 
+			JOIN STORE B
+			ON A.store_id = B.store_id
+			JOIN LOCATION L
+		    ON B.location_id = L.location_id
+		WHERE member_no = #{member_no}
+	</select>
+	
+	<select id="selectMyOlympicList" resultType="java.util.HashMap">
+		SELECT 
+			*
+		FROM STORE_OLYMPIC A 
+			JOIN STORE B
+			ON A.store_id = B.store_id
+			JOIN LOCATION L
+		    ON B.location_id = L.location_id
+		WHERE member_no = #{member_no}
+		<if test="page_num != null">
+		LIMIT #{page_num}, 5
+		</if>
+	</select>
+	
+	<insert id="insertMyOlympicList">
+		INSERT INTO STORE_PICK
+			(pick_id, 
+			 store_id, 
+			 reg_dt, 
+			 member_no, 
+			 pick_type)
+			VALUES
+			(SELECT GET_HE_SEQ('STORE_PICK'),
+			 #{store_id},
+			 now(),
+			 #{member_no},
+			 #{pick_type})
+	</insert>
+	
+	<delete id="deleteMyOlympicList">
+		DELETE FROM STORE_PICK
+			WHERE 	member_no = #{member_no} AND 
+					store_id = #{store_id}
+	</delete>
+	
+	<!-- 베스트 올림픽 리스트 -->
+	<select id="totalBestOlympicList" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM STORE_OLYMPIC A 
+			JOIN STORE B
+			ON A.store_id = B.store_id
+			JOIN LOCATION L
+		    ON B.location_id = L.location_id
+		order by A.like_cnt DESC
+	</select>
+	
+	<select id="selectBestOlympicList" resultType="java.util.HashMap">
+		SELECT 
+			* 
+		FROM STORE_OLYMPIC A 
+			JOIN STORE B
+			ON A.store_id = B.store_id
+			JOIN LOCATION L
+		    ON B.location_id = L.location_id
+		order by A.like_cnt DESC
+		<if test="page_num != null">
+		LIMIT #{page_num} , 5
+		</if>
+	</select>
+	
+	
+	<!-- 리뷰 리스트 -->
+	<select id="totalReviewList" resultType="int">
+		SELECT count(*) 
+			FROM REVIEW R JOIN STORE S
+		    ON R.store_id = S.store_id
+		where S.store_id = #{store_id}	
+	</select>
+
+	<select id="selectReviewList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT *
+			FROM REVIEW R JOIN STORE S
+		    ON R.store_id = S.store_id
+		where S.store_id = #{store_id}
+		 order by reg_dt DESC
+		<if test="page_num != null">
+		LIMIT #{page_num} , 5
+		</if>
+	</select>
+	
+	<!-- 리뷰  -->
+	<insert id="insertReview">
+		INSERT INTO REVIEW (
+					review_id, 
+					store_id, 
+					review_content, 
+					eat_like,
+					member_no,
+					reg_dt)
+			VALUES (#{review_id},
+					#{store_id},
+					#{content},
+					#{eat_like},
+					#{member_no},
+					#{reg_dt}
+					)
+	</insert>
+	
+	
+	<update id="updateReview">
+		UPDATE REVIEW 
+			SET eat_like = #{eat_like},
+				review_content = #{content},
+				up_dt = now()
+			where member_no = #{member_no} AND 
+				  review_id = #{review_id}
+	</update>
+	
+	<delete id="deleteReview">
+		DELETE FROM REVIEW
+			WHERE member_no = #{member_no} AND 
+				  review_id = #{review_id}
+	</delete>
+	
+	<select id="reviewValidation" resultType="int">
+		SELECT COUNT(R.review_id)
+			FROM REVIEW R
+				JOIN MEMBER M
+			ON M.member_no = R.member_no
+				WHERE M.member_no = #{member_no}
+				  AND M.login_token = #{login_token}
+	</select>
+	
+	<select id="getSEQ" resultType="java.lang.String">
+		SELECT GET_HE_SEQ(#{tblName});
+	</select>
+</mapper>

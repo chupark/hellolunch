@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+ 
+<mapper namespace="com.helloeating.mapper.UserMapper">
+	
+	    
+    <insert id="InsertMember">
+    	INSERT INTO MEMBER 
+    				(MEMBER_NO, ID, PASSWORD, NICKNAME, JOIN_DATE, LAST_LOGIN, device_token, MARKETING_AGREE, REG_GB) 
+    				VALUES ((SELECT GET_HE_SEQ('MEMBER')), #{id}, #{password}, #{nickname}, NOW(), NOW(), #{device_token}, #{marketing_agree}, #{reg_gb})
+    </insert>
+
+	<select id="SelectLoginToken" resultType="int">
+		SELECT	COUNT(LOGIN_TOKEN) 
+		FROM	MEMBER 
+		WHERE 	1=1
+		<if test="id != null">
+			AND ID=#{id}
+		</if>
+		AND LOGIN_TOKEN=#{loginToken}
+	</select>
+	
+	<select id="idDuplication" resultType="int">
+		SELECT	COUNT(ID) 
+		FROM	MEMBER 
+		WHERE 	ID = #{id}
+	</select>
+	
+	<select id="idPwCheck" resultType="int">
+		SELECT	COUNT(ID) 
+		FROM	MEMBER 
+		WHERE 	ID = #{id} AND PASSWORD = #{password}
+		<if test="loginToken != null">
+			AND LOGIN_TOKEN=#{loginToken}
+		</if>
+		
+	</select>
+	
+	<update id="updateLoginToken">
+		UPDATE MEMBER
+		SET LOGIN_TOKEN = #{loginToken}
+		WHERE ID = #{id}
+	</update>
+	
+	<update id="updateMemberInfo">
+		UPDATE MEMBER
+		SET ID = #{id}, 
+			PASSWORD = #{ch_password},
+			NICKNAME = #{nickname}
+		WHERE ID = #{id} AND PASSWORD = #{password} AND LOGIN_TOKEN=#{login_token}
+	</update>
+	
+	<select id="selectMemberInfo" resultType="java.util.HashMap">
+		SELECT ID, 
+			   NICKNAME,
+			   DATE_FORMAT(JOIN_DATE, '%Y-%m-%d %H:%i:%s') JOIN_DATE, 
+			   DATE_FORMAT(LAST_LOGIN, '%Y-%m-%d %H:%i:%s') LAST_LOGIN, 
+			   POINT, GRADE, 
+			   USER_STATUS, 
+			   LOGIN_TOKEN, 
+			   MEMBER_NO, 
+			   MARKETING_AGREE, 
+			   DATE_FORMAT(MARKETING_AGREE_DT, '%Y-%m-%d %H:%i:%s') MARKETING_AGREE_DT
+		FROM MEMBER
+		WHERE ID = #{id}
+	</select>
+	
+	<update id="updateDeviceToken">
+		UPDATE MEMBER SET
+				DEVICE_TOKEN = #{device_token}
+		WHERE ID = #{id}
+	</update>
+	
+	<update id="updateLastLogin">
+		UPDATE MEMBER SET
+				LAST_LOGIN = NOW()
+		WHERE ID = #{id}
+	</update>
+</mapper>

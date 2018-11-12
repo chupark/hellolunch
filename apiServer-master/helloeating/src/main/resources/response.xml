@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codeList>
+	<property name="E0001">
+		<value>필수값 누락</value>
+	</property>
+	<property name="E0002">
+		<value></value>
+	</property>
+	<property name="E0003">
+		<value></value>
+	</property>
+	<property name="E0004">
+		<value></value>
+	</property>
+	<property name="E0005">
+		<value></value>
+	</property>
+	<property name="S0001">
+		<value>정상 처리되었습니다.</value>
+	</property>
+</codeList>
+
